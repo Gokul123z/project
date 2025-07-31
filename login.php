@@ -20,15 +20,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             case "admin":
                 header("Location: adminhome.php");
                 break;
-            case "farmer":
-                header("Location: farmerhome.php");
+            case "customer": 
+                $login_id=$row['login_id'];
+                $sql="select * from customer where login_id='$login_id'";
+                $result=mysqli_query($conn,$sql);
+                $row=mysqli_fetch_array($result);
+                $_SESSION['customer_id']=$row['customer_id'];
+                header("Location: cust_home.php");
                 break;
-            case "user":
-                header("Location: userhome.php");
-                break;
-            case "wholesaler":
-                header("Location: wholesalerhome.php");
-                break;
+        
             default:
                 $error = "Unknown role.";
         }
