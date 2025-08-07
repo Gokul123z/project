@@ -8,7 +8,7 @@
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <div class="navbar-nav ms-auto py-0">
                 <a href="cust_home.php" class="nav-item nav-link active">Home</a>
-             
+             <a href="cust_product.php" class="nav-item nav-link">Product</a>
                 <a href="product.html" class="nav-item nav-link">Cart</a>
                    <a href="product.html" class="nav-item nav-link">My Orders</a>
                 <div class="nav-item dropdown">

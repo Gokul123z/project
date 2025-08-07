@@ -62,7 +62,7 @@ include('indexheader.php');
                         JOIN tblcategory ca ON pr.category_id = ca.category_id
                         JOIN tblpet pt ON pr.pet_id=pt.pet_id
                         JOIN tblsubcategory sc ON pr.subcategoryid= sc.subcategoryid
-                        LIMIT 6";
+                        ";
 
                 $result = mysqli_query($conn, $sql);
                 while ($row = mysqli_fetch_array($result)) {
@@ -81,19 +81,9 @@ include('indexheader.php');
                                     <span class="text-muted">Brand: <?php echo $row['brandname']; ?></span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <small class="text-muted">Available Sizes:</small>
-                                        <?php
-                                        // Fetch available sizes for this product
-                                        $sizeQuery = "SELECT size FROM tblproductsize WHERE productid = ".$row['productid']." GROUP BY size";
-                                        $sizeResult = mysqli_query($conn, $sizeQuery);
-                                        while($sizeRow = mysqli_fetch_array($sizeResult)) {
-                                            echo '<span class="badge bg-secondary ms-1">'.$sizeRow['size'].'</span>';
-                                        }
-                                        ?>
-                                    </div>
+                                   
                                     <button class="btn btn-primary btn-sm" 
-                                            onclick="window.location.href='product_detail.php?id=<?php echo $row['productid']; ?>'">
+                                            onclick="window.location.href='cust_productdetails.php?id=<?php echo $row['productid']; ?>'">
                                         View Options
                                     </button>
                                 </div>
