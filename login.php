@@ -20,15 +20,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             case "admin":
                 header("Location: adminhome.php");
                 break;
-            case "customer": 
-                $login_id=$row['login_id'];
-                $sql="select * from customer where login_id='$login_id'";
-                $result=mysqli_query($conn,$sql);
-                $row=mysqli_fetch_array($result);
-                $_SESSION['customer_id']=$row['customer_id'];
+            case "customer":
+                $login_id = $row['login_id'];
+                $sql = "select * from customer where login_id='$login_id'";
+                $result = mysqli_query($conn, $sql);
+                $row = mysqli_fetch_array($result);
+                $_SESSION['customer_id'] = $row['customer_id'];
                 header("Location: cust_home.php");
                 break;
-        
+
             default:
                 $error = "Unknown role.";
         }
@@ -79,12 +79,24 @@ include('indexheader.php');
                         </div>
                     </form>
                 </div>
+
+
+
+
                 <div class="col-lg-5">
-                    <div class="bg-light p-4 h-100 d-flex align-items-center justify-content-center">
-                        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" 
-                             alt="Cute cat looking at camera" 
-                             class="img-fluid rounded shadow" 
-                             style="max-height: 400px; width: 100%; object-fit: cover;">
+                    <div class="bg-light p-4 h-100 d-flex flex-column align-items-center justify-content-center">
+                        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                            alt="Cute cat looking at camera"
+                            class="img-fluid rounded shadow mb-3"
+                            style="max-height: 350px; width: 100%; object-fit: cover;">
+                        <p class="text-center text-muted lead mb-0">"Great care begins with you. Sign in and explore the joy of loving a pet!"</p>
+                      
+                        <p> "Enter your world of pet care, love, and loyalty. We’re happy to have you back!"
+                            "Your pet’s happiness begins with your care. Let’s continue the journey!"
+                            "Because pets aren’t just animals—they’re family. Welcome back!"
+                            "Great care begins with you. Sign in and explore the joy of loving a pet!"
+                        </p>
+
                     </div>
                 </div>
             </div>
@@ -97,4 +109,5 @@ include('indexheader.php');
     include('indexfooter.php');
     ?>
 </body>
+
 </html>

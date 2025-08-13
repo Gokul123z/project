@@ -148,3 +148,1009 @@ if (isset($_POST["category"])) {
 </body>
 
 </html>
+
+
+
+
+
+$result = mysqli_query($conn, $query);
+
+// Calculate grand total
+$grand_total = 0;
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cart - Pet Store</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .cart-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+            align-items: center;
+        }
+
+        .cart-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            border: 1px solid #eee;
+            margin-right: 20px;
+        }
+
+        .cart-details {
+            flex: 1;
+        }
+
+        .cart-actions {
+            text-align: right;
+        }
+
+        .total-line {
+            text-align: right;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .btn-checkout {
+            background-color: #2874f0;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .btn-remove {
+            color: red;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+    </style>
+</head>
+<body>
+
+<?php include('usernav.php'); ?>
+
+<div class="cart-container">
+    <h2>Your Cart</h2>
+
+    <?php if (mysqli_num_rows($result) > 0): ?>
+        <?php while ($row = mysqli_fetch_assoc($result)): ?>
+            <?php 
+                $item_total = $row['price'] * $row['quantity'];
+                $grand_total += $item_total;
+            ?>
+            <div class="cart-item">
+                <img src="<?php echo htmlspecialchars($row['image']); ?>" alt="<?php echo htmlspecialchars($row['productname']); ?>">
+                <div class="cart-details">
+                    <h4><?php echo htmlspecialchars($row['productname']); ?></h4>
+                    <p>Brand: <?php echo htmlspecialchars($row['brandname']); ?></p>
+                    <p>Size: <?php echo htmlspecialchars($row['size']); ?></p>
+                    <p>Price: ₹<?php echo number_format($row['price'], 2); ?></p>
+                    <p>Quantity: <?php echo $row['quantity']; ?></p>
+                    <p><strong>Total: ₹<?php echo number_format($item_total, 2); ?></strong></p>
+                </div>
+                <div class="cart-actions">
+                    <a class="btn-remove" href="remove_from_cart.php?cartid=<?php echo $row['cartid']; ?>">Remove</a>
+                </div>
+            </div>
+        <?php endwhile; ?>
+
+        <div class="total-line">Grand Total: ₹<?php echo number_format($grand_total, 2); ?></div>
+        <button class="btn-checkout">Proceed to Checkout</button>
+
+    <?php else: ?>
+        <p>Your cart is empty.</p>
+    <?php endif; ?>
+</div>
+
+<?php include('indexfooter.php'); ?>
+
+</body>
+</html>
+
+
+
+productdetails
+
+<?php
+include('connection.php');
+include('indexheader.php');
+
+// Get product ID from URL
+/* $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0; */
+$product_id = 15;
+// Fetch product details
+$product_query = "SELECT p.*, b.brandname, c.categoryname, pt.petname, sc.subcategoryname 
+                  FROM tblproduct p
+                  JOIN tblbrand b ON p.brand_id = b.brand_id
+                  JOIN tblcategory c ON p.category_id = c.category_id
+                  JOIN tblpet pt ON p.pet_id = pt.pet_id
+                  JOIN tblsubcategory sc ON p.subcategoryid = sc.subcategoryid
+                  WHERE p.productid = $product_id";
+                  
+$product_result = mysqli_query($conn, $product_query);
+$product = mysqli_fetch_assoc($product_result);
+
+// Fetch available sizes
+$sizes_query = "SELECT * FROM tblproductsize WHERE productid = $product_id AND stock > 0";
+$sizes_result = mysqli_query($conn, $sizes_query);
+$sizes = [];
+while ($size = mysqli_fetch_assoc($sizes_result)) {
+    $sizes[] = $size;
+}
+
+// Initialize variables
+$selected_size = null;
+$quantity = 1;
+$total_price = 0;
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $selected_size_id = isset($_POST['size_id']) ? intval($_POST['size_id']) : 0;
+    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+
+    // Find the selected size
+    foreach ($sizes as $size) {
+        if ($size['productsizeid'] == $selected_size_id) {
+            $selected_size = $size;
+            $total_price = $size['price'] * $quantity;
+            break;
+        }
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($product['productname']); ?> - Pet Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #2874f0;
+            --primary-orange: #fb641b;
+            --primary-green: #388e3c;
+            --light-gray: #f1f3f6;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #878787;
+            --white: #ffffff;
+            --black: #212121;
+            --yellow: #ff9f00;
+            --shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: var(--black);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        
+        .product-card {
+            background: var(--white);
+            border-radius: 2px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .product-row {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        
+        .product-gallery {
+            width: 45%;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .main-image-container {
+            border: 1px solid var(--medium-gray);
+            height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            background: #fefefe;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-image {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+        
+        .main-image:hover {
+            transform: scale(1.05);
+        }
+        
+        .thumbnail-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            border: 1px solid var(--medium-gray);
+            cursor: pointer;
+            padding: 5px;
+            flex-shrink: 0;
+            transition: border-color 0.2s;
+            background: #fefefe;
+        }
+        
+        .thumbnail:hover {
+            border-color: var(--primary-blue);
+        }
+        
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .product-details {
+            width: 55%;
+            padding: 15px 25px;
+            position: relative;
+        }
+        
+        .product-title {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--black);
+        }
+        
+        .product-subtitle {
+            font-size: 14px;
+            color: var(--dark-gray);
+            margin-bottom: 12px;
+        }
+        
+        .rating-container {
+            display: flex;
+            align-items: center;
+            background: var(--primary-green);
+            color: white;
+            width: fit-content;
+            padding: 3px 10px 3px 8px;
+            border-radius: 3px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .rating-star {
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        
+        .rating-count {
+            color: var(--primary-blue);
+            margin-left: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            background: none;
+            border: none;
+            outline: none;
+        }
+        
+        .price-container {
+            margin: 20px 0;
+            padding: 10px 0;
+            border-top: 1px dashed #e0e0e0;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        
+        .price-row {
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 5px;
+        }
+        
+        .current-price {
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--black);
+        }
+        
+        .original-price {
+            text-decoration: line-through;
+            color: var(--dark-gray);
+            margin-left: 10px;
+            font-size: 18px;
+        }
+        
+        .discount-percent {
+            color: var(--primary-green);
+            font-size: 18px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+        
+        .offer-tag {
+            background: var(--primary-green);
+            color: white;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-left: 10px;
+            position: relative;
+            top: -3px;
+        }
+        
+        .tax-info {
+            color: var(--primary-green);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        .size-section {
+            margin: 25px 0;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: var(--black);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .section-title span {
+            font-weight: 400;
+            color: var(--primary-blue);
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .size-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .size-option {
+            border: 1px solid #c2c2c2;
+            padding: 8px 20px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .size-option:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+        
+        .size-option.selected {
+            border-color: var(--primary-blue);
+            background-color: #f0f8ff;
+            color: var(--primary-blue);
+            font-weight: 500;
+            box-shadow: 0 0 0 1px var(--primary-blue);
+        }
+        
+        .quantity-section {
+            margin: 25px 0;
+        }
+        
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+        }
+        
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            background: #f0f0f0;
+            border: 1px solid #c2c2c2;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .quantity-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .quantity-input {
+            width: 50px;
+            height: 30px;
+            text-align: center;
+            border-top: 1px solid #c2c2c2;
+            border-bottom: 1px solid #c2c2c2;
+            border-left: none;
+            border-right: none;
+            font-size: 14px;
+        }
+        
+        .stock-info {
+            font-size: 14px;
+            color: var(--dark-gray);
+            margin-left: 15px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .btn-add-to-cart {
+            background-color: var(--yellow);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 2px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+        }
+        
+        .btn-add-to-cart:hover {
+            background: #ff8c00;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .btn-buy-now {
+            background-color: var(--primary-orange);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 2px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+        }
+        
+        .btn-buy-now:hover {
+            background: #e55b17;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .delivery-info {
+            border-top: 1px dashed #e0e0e0;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        
+        .delivery-option {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .delivery-icon {
+            margin-right: 10px;
+            color: var(--primary-green);
+            font-size: 18px;
+        }
+        
+        .delivery-text {
+            font-size: 14px;
+        }
+        
+        .delivery-highlight {
+            color: var(--primary-green);
+            font-weight: 500;
+        }
+        
+        .product-description-section {
+            margin-top: 30px;
+            background: var(--white);
+            border-radius: 2px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+        
+        .section-header {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: var(--black);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--medium-gray);
+        }
+        
+        .description-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #212121;
+        }
+        
+        .description-content ul {
+            margin-left: 20px;
+        }
+        
+        .product-meta {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--dark-gray);
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            margin-bottom: 10px;
+            width: 50%;
+        }
+        
+        .meta-item strong {
+            color: var(--black);
+        }
+        
+        /* Flipkart-style breadcrumb */
+        .breadcrumb {
+            padding: 15px 0;
+            font-size: 12px;
+            color: var(--dark-gray);
+        }
+        
+        .breadcrumb a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+        
+        .breadcrumb span {
+            margin: 0 5px;
+            color: var(--dark-gray);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .product-row {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .product-gallery, .product-details {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            .main-image-container {
+                height: 300px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .btn-add-to-cart, .btn-buy-now {
+                width: 100%;
+                padding: 12px 0;
+            }
+            
+            .meta-item {
+                width: 100%;
+            }
+        }
+        
+        /* Flipkart-style tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Flipkart-style highlights */
+        .highlights {
+            margin-top: 20px;
+        }
+        
+        .highlight-item {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .highlight-icon {
+            color: var(--primary-green);
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        
+        .highlight-text {
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar Start -->
+    <?php include('usernav.php'); ?>
+    <!-- Navbar End -->
+
+    <!-- Breadcrumb -->
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="#">Home</a>
+            <span>></span>
+            <a href="#">Pet Supplies</a>
+            <span>></span>
+            <a href="#"><?php echo htmlspecialchars($product['categoryname']); ?></a>
+            <span>></span>
+            <a href="#"><?php echo htmlspecialchars($product['subcategoryname']); ?></a>
+            <span>></span>
+            <span><?php echo htmlspecialchars($product['productname']); ?></span>
+        </div>
+    </div>
+
+    <!-- Product Detail Start -->
+    <div class="container">
+        <div class="product-card">
+            <div class="product-row">
+                <!-- Product Gallery -->
+                <div class="product-gallery">
+                    <div class="main-image-container">
+                        <img src="<?php echo htmlspecialchars($product['image']); ?>"
+                             alt="<?php echo htmlspecialchars($product['productname']); ?>"
+                             class="main-image">
+                    </div>
+                    <div class="thumbnail-container">
+                        <div class="thumbnail">
+                            <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="Thumbnail 1">
+                        </div>
+                        <!-- Add more thumbnails if available -->
+                    </div>
+                    
+                    <div class="highlights">
+                        <div class="section-header">Highlights</div>
+                        <div class="highlight-item">
+                            <div class="highlight-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="highlight-text">Premium quality pet product</div>
+                        </div>
+                        <div class="highlight-item">
+                            <div class="highlight-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="highlight-text">Veterinary recommended</div>
+                        </div>
+                        <div class="highlight-item">
+                            <div class="highlight-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="highlight-text">Safe for your <?php echo htmlspecialchars($product['petname']); ?></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Details -->
+                <div class="product-details">
+                    <h1 class="product-title"><?php echo htmlspecialchars($product['productname']); ?></h1>
+                    <div class="product-subtitle"><?php echo htmlspecialchars($product['brandname']); ?></div>
+                    
+                    <div class="rating-container">
+                        <span class="rating-star">★</span>
+                        <span>4.2</span>
+                        <button class="rating-count">12,345 Ratings & Reviews</button>
+                    </div>
+                    
+                    <div class="price-container">
+                        <div class="price-row">
+                            <span class="current-price" id="price_display">
+                                <?php if ($selected_size): ?>
+                                    ₹<?php echo number_format($total_price, 2); ?>
+                                <?php else: ?>
+                                    Select size to see price
+                                <?php endif; ?>
+                            </span>
+                            <?php if ($selected_size): ?>
+                                <span class="original-price">₹<?php echo number_format($selected_size['price'] * 1.2, 2); ?></span>
+                                <span class="discount-percent">20% off</span>
+                                <span class="offer-tag">Best Deal</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="tax-info">inclusive of all taxes</div>
+                        <input type="hidden" id="base_price" value="<?php echo ($selected_size) ? $selected_size['price'] : 0; ?>">
+                    </div>
+                    
+                    <form method="POST" action="">
+                        <!-- Size Selection -->
+                        <div class="size-section">
+                            <div class="section-title">
+                                Select Size
+                                <span>Size Guide</span>
+                            </div>
+                            <div class="size-options">
+                                <?php foreach ($sizes as $size): ?>
+                                    <div class="size-option <?php echo ($selected_size && $selected_size['productsizeid'] == $size['productsizeid']) ? 'selected' : ''; ?>"
+                                         onclick="selectSize(this, <?php echo $size['productsizeid']; ?>, <?php echo $size['price']; ?>, <?php echo $size['stock']; ?>)">
+                                        <input type="radio" name="size_id" value="<?php echo $size['productsizeid']; ?>"
+                                               id="size_<?php echo $size['productsizeid']; ?>"
+                                               style="display: none;"
+                                               <?php echo ($selected_size && $selected_size['productsizeid'] == $size['productsizeid']) ? 'checked' : ''; ?>>
+                                        <label for="size_<?php echo $size['productsizeid']; ?>">
+                                            <?php echo htmlspecialchars($size['size']); ?>
+                                        </label>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Quantity Selector -->
+                        <div class="quantity-section">
+                            <div class="section-title">Quantity</div>
+                            <div class="quantity-selector">
+                                <button type="button" class="quantity-btn" onclick="changeQuantity(-1)">-</button>
+                                <input type="number" name="quantity" class="quantity-input" id="quantity_input"
+                                    value="<?php echo $quantity; ?>" min="1" max="<?php echo ($selected_size) ? $selected_size['stock'] : 1; ?>">
+                                <button type="button" class="quantity-btn" onclick="changeQuantity(1)">+</button>
+                                <span class="stock-info" id="stock_display">
+                                    <?php if ($selected_size): ?>
+                                        <?php echo $selected_size['stock']; ?> available
+                                    <?php else: ?>
+                                        Select size to see availability
+                                    <?php endif; ?>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <button type="submit" class="btn-add-to-cart">
+                                <i class="fas fa-shopping-cart" style="margin-right: 8px;"></i>ADD TO CART
+                            </button>
+                            <button type="button" class="btn-buy-now">BUY NOW</button>
+                        </div>
+                    </form>
+                    
+                    <!-- Delivery Info -->
+                    <div class="delivery-info">
+                        <div class="delivery-option">
+                            <div class="delivery-icon"><i class="fas fa-truck"></i></div>
+                            <div class="delivery-text">
+                                <span class="delivery-highlight">Free delivery</span> on orders over ₹499
+                            </div>
+                        </div>
+                        <div class="delivery-option">
+                            <div class="delivery-icon"><i class="fas fa-sync-alt"></i></div>
+                            <div class="delivery-text">
+                                <span class="delivery-highlight">7 days</span> replacement policy
+                            </div>
+                        </div>
+                        <div class="delivery-option">
+                            <div class="delivery-icon"><i class="fas fa-wallet"></i></div>
+                            <div class="delivery-text">
+                                <span class="delivery-highlight">Cash on Delivery</span> available
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Product Meta -->
+                    <div class="product-meta">
+                        <div class="meta-item"><strong>Brand:</strong> <?php echo htmlspecialchars($product['brandname']); ?></div>
+                        <div class="meta-item"><strong>Category:</strong> <?php echo htmlspecialchars($product['categoryname']); ?></div>
+                        <div class="meta-item"><strong>Subcategory:</strong> <?php echo htmlspecialchars($product['subcategoryname']); ?></div>
+                        <div class="meta-item"><strong>For:</strong> <?php echo htmlspecialchars($product['petname']); ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Description -->
+        <div class="product-description-section">
+            <div class="section-header">Description</div>
+            <div class="description-content">
+                <p><?php echo nl2br(htmlspecialchars($product['description'])); ?></p>
+                <ul>
+                    <li>Premium quality materials for your pet's comfort</li>
+                    <li>Designed specifically for <?php echo htmlspecialchars($product['petname']); ?>s</li>
+                    <li>Veterinary approved and recommended</li>
+                    <li>Easy to use and maintain</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- Product Detail End -->
+
+    <!-- Footer Start -->
+    <?php include('indexfooter.php'); ?>
+    <!-- Footer End -->
+
+    <script>
+    // Function to handle size selection
+    function selectSize(element, sizeId, price, stock) {
+        // Remove selected class from all size options
+        document.querySelectorAll('.size-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked option
+        element.classList.add('selected');
+        
+        // Check the corresponding radio button
+        document.getElementById('size_' + sizeId).checked = true;
+        
+        // Update the hidden base price field
+        document.getElementById('base_price').value = price;
+        
+        // Get the quantity input element
+        const quantityInput = document.getElementById('quantity_input');
+        
+        // Update the max quantity allowed
+        quantityInput.max = stock;
+        
+        // Update available stock display
+        document.getElementById('stock_display').textContent = stock + ' available';
+        
+        // If current quantity exceeds new stock, adjust it
+        if (parseInt(quantityInput.value) > stock) {
+            quantityInput.value = stock;
+        }
+        
+        // Update the price display
+        updatePrice();
+        
+        // Show original price and discount
+        const originalPrice = document.querySelector('.original-price');
+        const discountPercent = document.querySelector('.discount-percent');
+        const offerTag = document.querySelector('.offer-tag');
+        
+        if (originalPrice && discountPercent && offerTag) {
+            originalPrice.textContent = '₹' + (price * 1.2).toFixed(2);
+            discountPercent.textContent = '20% off';
+            offerTag.style.display = 'inline-block';
+        }
+    }
+    
+    // Function to change quantity
+    function changeQuantity(change) {
+        const quantityInput = document.getElementById('quantity_input');
+        let currentValue = parseInt(quantityInput.value) || 1;
+        const maxQuantity = parseInt(quantityInput.max) || 1;
+        const minQuantity = parseInt(quantityInput.min) || 1;
+        
+        // Calculate new value
+        let newValue = currentValue + change;
+        
+        // Validate new value
+        if (newValue < minQuantity) {
+            newValue = minQuantity;
+        } else if (newValue > maxQuantity) {
+            newValue = maxQuantity;
+        }
+        
+        // Update the input value
+        quantityInput.value = newValue;
+        
+        // Update the price display
+        updatePrice();
+    }
+    
+    // Function to update price display
+    function updatePrice() {
+        const basePrice = parseFloat(document.getElementById('base_price').value) || 0;
+        const quantity = parseInt(document.getElementById('quantity_input').value) || 1;
+        const totalPrice = basePrice * quantity;
+        
+        const priceDisplay = document.getElementById('price_display');
+        if (basePrice > 0) {
+            priceDisplay.textContent = '₹' + totalPrice.toFixed(2);
+        } else {
+            priceDisplay.textContent = 'Select size to see price';
+        }
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up event listener for direct quantity input changes
+        document.getElementById('quantity_input').addEventListener('change', function() {
+            const max = parseInt(this.max) || 1;
+            const min = parseInt(this.min) || 1;
+            let value = parseInt(this.value);
+            
+            // Validate input
+            if (isNaN(value)) {
+                value = min;
+            } else if (value < min) {
+                value = min;
+            } else if (value > max) {
+                value = max;
+            }
+            
+            this.value = value;
+            updatePrice();
+        });
+        
+        // Update price if we have a selected size on page load
+        if (document.getElementById('base_price').value > 0) {
+            updatePrice();
+        }
+        
+        // Add hover effect to thumbnails
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        const mainImage = document.querySelector('.main-image');
+        
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                const img = this.querySelector('img');
+                if (img) {
+                    mainImage.src = img.src;
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>
