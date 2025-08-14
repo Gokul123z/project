@@ -1,10 +1,11 @@
 <?php
 include('connection.php');
 include('indexheader.php');
-
+session_start();
+ 
 // Get product ID from URL
-/* $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0; */
-$product_id = 15;
+$product_id = isset($_GET['id']) ? intval($_GET['id']) : 0; 
+
 // Fetch product details
 $product_query = "SELECT p.*, b.brandname, c.categoryname, pt.petname, sc.subcategoryname 
                   FROM tblproduct p
@@ -29,9 +30,118 @@ while ($size = mysqli_fetch_assoc($sizes_result)) {
 $selected_size = null;
 $quantity = 1;
 $total_price = 0;
+$message = '';
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
+    $selected_size_id = isset($_POST['size_id']) ? intval($_POST['size_id']) : 0;
+    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+    $customer_id = isset($_SESSION['customer_id']) ? intval($_SESSION['customer_id']) : 0;
+
+    if ($customer_id == 0) {
+        $message = "Please login to add items to cart";
+    } elseif ($selected_size_id == 0) {
+        $message = "Please select a size";
+    } else {
+        // Check if the item already exists in cart
+        $check_cart_query = "SELECT * FROM tbl_cart 
+                            WHERE customer_id = $customer_id 
+                            AND productsizeid = $selected_size_id";
+        $check_cart_result = mysqli_query($conn, $check_cart_query);
+        
+        if (mysqli_num_rows($check_cart_result) > 0) {
+            // Update existing cart item
+            $update_cart_query = "UPDATE tbl_cart 
+                                SET quantity = quantity + $quantity 
+                                WHERE customer_id = $customer_id 
+                                AND productsizeid = $selected_size_id";
+
+                                if(mysqli_query($conn, $update_cart_query)) { ?>
+                <script type="text/javascript" src="swal/jquery.min.js"></script>
+                <script type="text/javascript" src="swal/bootstrap.min.js"></script>
+                <script type="text/javascript" src="swal/sweetalert2@11.js"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({
+                            icon: 'success',
+                            text: "Item quantity updated in cart",
+                            didClose: () => {
+                                window.location.replace('cust_product.php?page=product');
+                            }
+                        });
+                    });
+                </script>
+                 <?php
+            } else { ?>
+                <script type="text/javascript" src="swal/jquery.min.js"></script>
+                <script type="text/javascript" src="swal/bootstrap.min.js"></script>
+                <script type="text/javascript" src="swal/sweetalert2@11.js"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({
+                            icon: 'error',
+                            text: 'Failed to add  item to cart',
+                            didClose: () => {
+                                window.location.replace('cust_product.php?page=product');
+                            }
+                        });
+                    });
+                </script>
+                 <?php
+            }
+        } else {
+            // Add new item to cart
+            $add_to_cart_query = "INSERT INTO tbl_cart 
+                                 (customer_id, productsizeid, quantity) 
+                                 VALUES ($customer_id, $selected_size_id, $quantity)";
+            if(mysqli_query($conn, $add_to_cart_query)) { ?>
+                <script type="text/javascript" src="swal/jquery.min.js"></script>
+                <script type="text/javascript" src="swal/bootstrap.min.js"></script>
+                <script type="text/javascript" src="swal/sweetalert2@11.js"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({
+                            icon: 'success',
+                            text: "Item added to cart successfully",
+                            didClose: () => {
+                                window.location.replace('cust_product.php?page=product');
+                            }
+                        });
+                    });
+                </script>
+             <?php
+            } else { ?>
+                <script type="text/javascript" src="swal/jquery.min.js"></script>
+                <script type="text/javascript" src="swal/bootstrap.min.js"></script>
+                <script type="text/javascript" src="swal/sweetalert2@11.js"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({
+                            icon: 'error',
+                            text: 'Failed to add item to cart',
+                            didClose: () => {
+                                window.location.replace('cust_product.php?page=product');
+                            }
+                        });
+                    });
+                </script>
+            <?php
+            }
+        }
+        
+    }
+        
+        // Find the selected size for display
+        foreach ($sizes as $size) {
+            if ($size['productsizeid'] == $selected_size_id) {
+                $selected_size = $size;
+                $total_price = $size['price'] * $quantity;
+                break;
+            }
+        }
+    }
+ elseif ($_SERVER['REQUEST_METHOD'] == 'POST') 
+    // Handle non-cart form submission (just display)
     $selected_size_id = isset($_POST['size_id']) ? intval($_POST['size_id']) : 0;
     $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
 
@@ -43,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             break;
         }
     }
-}
+
 ?>
 
 <!DOCTYPE html>
@@ -348,6 +458,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin-bottom: 5px;
         }
         
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
         @media (max-width: 768px) {
             .product-gallery, .product-details {
                 width: 100%;
@@ -363,6 +490,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <!-- Product Detail Start -->
     <div class="product-container">
+        <?php if (!empty($message)): ?>
+            <div class="message <?php echo strpos($message, 'successfully') !== false ? 'success' : 'error'; ?>">
+                <?php echo htmlspecialchars($message); ?>
+            </div>
+        <?php endif; ?>
+        
         <div class="product-row">
             <!-- Product Gallery -->
             <div class="product-gallery">
@@ -441,7 +574,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     
                     <!-- Action Buttons -->
                     <div class="action-buttons">
-                        <button type="submit" class="btn-add-to-cart">ADD TO CART</button>
+                        <button type="submit" name="add_to_cart" class="btn-add-to-cart">ADD TO CART</button>
                         <button type="button" class="btn-buy-now">BUY NOW</button>
                     </div>
                 </form>

@@ -20,6 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             case "admin":
                 header("Location: adminhome.php");
                 break;
+
             case "customer":
                 $login_id = $row['login_id'];
                 $sql = "select * from customer where login_id='$login_id'";
@@ -47,6 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <?php
 include('indexheader.php');
 ?>
+<link rel="stylesheet" href="">
 
 <body>
     <!-- Topbar Start -->
@@ -90,12 +92,8 @@ include('indexheader.php');
                             class="img-fluid rounded shadow mb-3"
                             style="max-height: 350px; width: 100%; object-fit: cover;">
                         <p class="text-center text-muted lead mb-0">"Great care begins with you. Sign in and explore the joy of loving a pet!"</p>
-                      
-                        <p> "Enter your world of pet care, love, and loyalty. We’re happy to have you back!"
-                            "Your pet’s happiness begins with your care. Let’s continue the journey!"
-                            "Because pets aren’t just animals—they’re family. Welcome back!"
-                            "Great care begins with you. Sign in and explore the joy of loving a pet!"
-                        </p>
+
+                        
 
                     </div>
                 </div>
@@ -107,7 +105,23 @@ include('indexheader.php');
     <!-- Footer Start -->
     <?php
     include('indexfooter.php');
-    ?>
+    ?>`
+    <script>
+        document.getElementById("togglePassword").addEventListener("click", function() {
+            const pwdField = document.getElementById("password");
+            const icon = this.querySelector("i");
+            if (pwdField.type === "password") {
+                pwdField.type = "text";
+                icon.classList.remove("bi-eye");
+                icon.classList.add("bi-eye-slash");
+            } else {
+                pwdField.type = "password";
+                icon.classList.remove("bi-eye-slash");
+                icon.classList.add("bi-eye");
+            }
+        });
+    </script>
+
 </body>
 
 </html>
